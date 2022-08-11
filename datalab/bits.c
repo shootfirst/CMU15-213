@@ -143,7 +143,14 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+/* 
+ * solution: use De Morgan's Law and the definition of xor
+ * x ^ y = (~ x & y) | (x & ~ y) 
+ *         = ~ ~ ((~ x & y) | (x & ~ y))
+ *         = ~ (~ (~ x & y) & ~ (x & ~ y))
+ */
+
+  return ~ (~ (~ x & y) & ~ (x & ~ y));
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -152,9 +159,7 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int tmin(void) {
-
-  return 2;
-
+  return 1 << 31;
 }
 //2
 /*
@@ -165,7 +170,7 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+  return x == ~(1 << 31);
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -176,7 +181,7 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+  return (x | 0x55555555) == 0xFFFFFFFF;
 }
 /* 
  * negate - return -x 
@@ -186,7 +191,7 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return (~x) + 1;
 }
 //3
 /* 
@@ -199,7 +204,8 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+//solution return if x >= 0x30 && x < 0x39 || x == 0x39. use the highest bit 
+  return (!((x + (~0x30) + 1) & 0x80000000) && (x + (~0x39) + 1) & 0x80000000) || !(x ^ 0x39);
 }
 /* 
  * conditional - same as x ? y : z 
@@ -209,7 +215,8 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  x = (!!x << 31) >> 31;
+  return (x & y) | (~ x & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -218,8 +225,10 @@ int conditional(int x, int y, int z) {
  *   Max ops: 24
  *   Rating: 3
  */
+// (x < 0 && y >= 0 || x - y > 0 || x == y) && !(x >= 0 && y < 0) (to avoid overflow)
 int isLessOrEqual(int x, int y) {
-  return 2;
+  return (((x & 0x80000000) & !(y & 0x80000000)) | (x + (~y) + 1) & 0x80000000 | !(x ^ y)) 
+        & !((y & 0x80000000) & !(x & 0x80000000));
 }
 //4
 /* 
@@ -231,7 +240,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  return !((~ x | 0) ^ 0xFFFFFFFF);
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -246,7 +255,29 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+  int mask = x >> 31;
+  // if x is negative, set it to opposite number
+  x = (~x & mask) | (x & ~mask);
+
+  int bit16, bit8, bit4, bit2, bit1, bit0;
+  bit16 = !!(x >> 16) << 4;
+  x >>= bit16;
+
+  bit8 = !!(x >> 8) << 3;
+  x >>= bit8;
+
+  bit4 = !!(x >> 4) << 2;
+  x >>= bit4;
+
+  bit2 = !!(x >> 2) << 1;
+  x >>= bit2;
+
+  bit1 = !!(x >> 1) << 0;
+  x >>= bit1;
+
+  bit0 = x;
+  
+  return bit16 + bit8 + bit4 + bit2 + bit1 + bit0 + 1;
 }
 //float
 /* 
@@ -261,7 +292,20 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  unsigned exponent = (0x7F800000 & uf) >> 23;
+  unsigned mantissa = 0x007FFFFF & uf;
+  unsigned sig = (0x80000000 & uf) >> 31; 
+  if (exponent == 255) {
+    // NaN or inf number
+    return uf;
+  } else if (exponent == 0) {
+    // Denormalized numbers
+    mantissa *= 2;
+    return sig << 31 | exponent << 23 | mantissa;
+  } else {
+    exponent += 1;
+    return sig << 31 | exponent << 23 | mantissa;
+  }
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -276,7 +320,25 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  unsigned exponent = (0x7F800000 & uf) >> 23;
+  unsigned mantissa = 0x007FFFFF & uf;
+  unsigned sig = uf >> 31; 
+  int e = exponent - 127;
+
+  if (e >= 31) {
+    return 0x80000000u;
+  } else if (e < 0) {
+    return 0;
+  } else{
+    mantissa = (1 << 23) | mantissa;
+    if (e < 23){
+      mantissa >>= (23 - e);
+    } else {
+      mantissa <<= (e - 23);
+    }
+    return sig ? - mantissa : mantissa;
+  } 
+  
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -292,5 +354,16 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+  if (x > 127)
+    return 0xFF<<23;
+  else if (x < -148)
+    return 0;
+  else if(x >= -126) {
+    unsigned exponent = x + 127;
+    return exponent << 23;
+  }
+  else {
+    unsigned mantissa = 1 << (148 + x);
+    return mantissa;
+  }
 }
