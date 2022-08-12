@@ -170,7 +170,7 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return x == ~(1 << 31);
+  return !((x + 1 + x + 1) ^ 0) & !!(x + 1);
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -181,7 +181,10 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return (x | 0x55555555) == 0xFFFFFFFF;
+  // get 0xAAAAAAAA
+  int a = (0xAA << 8) | 0xAA;
+  int b = (a << 16) | a;
+  return !((x & b) ^ b);
 }
 /* 
  * negate - return -x 
@@ -205,7 +208,11 @@ int negate(int x) {
  */
 int isAsciiDigit(int x) {
 //solution return if x >= 0x30 && x < 0x39 || x == 0x39. use the highest bit 
-  return (!((x + (~0x30) + 1) & 0x80000000) && (x + (~0x39) + 1) & 0x80000000) || !(x ^ 0x39);
+  int j = 0x80 << 24;
+  int a = (x + ~0x2f) & j;
+  int b = (x + ~0x38) & j;
+  int c = !(x ^ 0x39);
+  return (!a & !!b) | c;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -227,8 +234,11 @@ int conditional(int x, int y, int z) {
  */
 // (x < 0 && y >= 0 || x - y > 0 || x == y) && !(x >= 0 && y < 0) (to avoid overflow)
 int isLessOrEqual(int x, int y) {
-  return (((x & 0x80000000) & !(y & 0x80000000)) | (x + (~y) + 1) & 0x80000000 | !(x ^ y)) 
-        & !((y & 0x80000000) & !(x & 0x80000000));
+  int a = !!(x >> 31) & !(y >> 31);
+  int b = !!((x + (~y) + 1) >> 31);
+  int c = !(x ^ y);
+  int d = !(!(x >> 31) & !!(y >> 31));
+  return (a | b | c) & d;
 }
 //4
 /* 
@@ -240,7 +250,9 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return !((~ x | 0) ^ 0xFFFFFFFF);
+  int a = (x >> 31) & 1;
+  int b = ((~x + 1) >> 31) & 1;
+  return  ~(a | b) + 2;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -255,11 +267,12 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
+  int bit16, bit8, bit4, bit2, bit1, bit0;
   int mask = x >> 31;
   // if x is negative, set it to opposite number
   x = (~x & mask) | (x & ~mask);
 
-  int bit16, bit8, bit4, bit2, bit1, bit0;
+  
   bit16 = !!(x >> 16) << 4;
   x >>= bit16;
 
