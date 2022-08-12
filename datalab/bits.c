@@ -369,14 +369,14 @@ int floatFloat2Int(unsigned uf) {
 unsigned floatPower2(int x) {
   if (x > 127)
     return 0xFF<<23;
-  else if (x < -148)
+  else if (x < -149)
     return 0;
   else if(x >= -126) {
     unsigned exponent = x + 127;
     return exponent << 23;
   }
   else {
-    unsigned mantissa = 1 << (148 + x);
+    unsigned mantissa = 1 << (149 + x);
     return mantissa;
   }
 }
