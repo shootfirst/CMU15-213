@@ -76,6 +76,60 @@ datalab主要是让我们熟悉位运算和数据存储在计算机中的形式
 
 大名鼎鼎的拆炸弹实验。主要是考察x86汇编。还可以练习gdb的使用。主要思路及代码解析我放在的反汇编的文件上，写在注释里。这里主要记录收获。主要是x86汇编的总结和gdb的使用。
 
+### x86架构
+
+#### x86寄存器：
+
+rax eax ax al   返回值
+rbx ebx bx bl   被调用者保存
+rcx ecx cx cl   第四个参数
+rdx edx dx dl   第三个参数
+rsi esi si sil  第二个参数
+rdi edi di dil  第一个参数
+rbp ebp bp bpl  被调用者保存
+rsp esp sp spl  栈指针
+r8  r8d r8w r8b 第五个参数
+r9  r9d r9w r9b 第五个参数
+r10 - r15       
+
+#### x86常用指令：
+
+##### 数据移动：
+
+lea    0x01(%rax,%rsi,1),%ecx  ecx = rax + rsi * 1 + 0x01
+mov    %edx,%eax               eax = edx
+
+##### 指令跳转：
+
+je     al等于bl跳转
+jnb    al不等于bl跳转
+jbe    al小于等于bl跳转
+jge    al带符号大于等于bl跳转
+jle    al带符号小于等于bl跳转
+
+
+### gdb
+
+GDB可以帮助你：
+
+按你自己的要求随心所欲运行程序；让程序在你设置的断点处停下；当程序停下时，可以检查相关变量值、寄存器值、栈帧和函数调用栈结构；
+
+gdb基本命令操作：
+
+help 命令：查看命令讲解
+print（p）：打印参数
+run（r）：运行被调试的程序。如果此前没有下过断点，则执行完整个程序
+continue（c）：继续执行被调试程序，直至下一个断点或程序结束
+break（b）文件名:行号 / 函数名：打断点
+break ... if ...：条件中断
+backtrace（bt）：列出调用栈
+step（s）：单步调试，跳入函数 si：汇编
+next（n）：单步调试 ni：汇编
+
+
+
+
+
 
 
 
